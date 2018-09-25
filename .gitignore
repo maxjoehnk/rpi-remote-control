@@ -5,3 +5,5 @@
 # IntelliJ Projects
 *.iml
 .idea
+
+.env
