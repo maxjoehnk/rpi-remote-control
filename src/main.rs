@@ -24,10 +24,18 @@ const ENCODER_DAT_PIN: u64 = 22;
 
 fn main() {
     let mut led = setup_output(LED_PIN).expect("led");
-    led.set_high();
     setup_display().unwrap();
 
     let (tx, rx) = mpsc::channel();
+
+    thread::spawn(move || {
+        loop {
+            led.set_high();
+            thread::sleep_ms(1000);
+            led.set_low();
+            thread::sleep_ms(1000);
+        }
+    });
 
     thread::spawn(move || {
         let clk = setup_input(ENCODER_CLK_PIN).unwrap();
@@ -59,7 +67,7 @@ fn main() {
     thread::spawn(move || {
         let btn = setup_input(BTN_PIN).unwrap();
 
-        btn.set_edge(Edge::RisingEdge);
+        btn.set_edge(Edge::RisingEdge).unwrap();
 
         let mut poller = btn.get_poller().unwrap();
 
