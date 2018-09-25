@@ -11,6 +11,8 @@ use hal::{Pin, Spidev};
 use hal::sysfs_gpio::Direction;
 use std::io;
 use std::fmt::Write;
+use std::sync::mpsc;
+use std::thread;
 
 const RST_PIN: u64 = 23;
 const DC_PIN: u64 = 24;
@@ -24,6 +26,43 @@ fn main() {
     let mut led = setup_output(LED_PIN).expect("led");
     led.set_high();
     setup_display().unwrap();
+
+    let (tx, rx) = mpsc::channel();
+
+    thread::spawn(move || {
+        let clk = setup_input(ENCODER_CLK_PIN).unwrap();
+        let dat = setup_input(ENCODER_DAT_PIN).unwrap();
+
+        let mut last_clk_state = 1;
+
+        loop {
+            match clk.get_value() {
+                Ok(1) => if last_clk_state == 0 {
+                    if let Ok(0) = dat.get_value() {
+                        tx.send(1).unwrap();
+                    }else {
+                        tx.send(-1).unwrap();
+                    }
+
+                    last_clk_state = 1;
+                },
+                Ok(state) => {
+                    last_clk_state = state;
+                },
+                Err(_) => {}
+            }
+
+            thread::sleep_ms(1);
+        }
+    });
+
+    let mut count = 0;
+
+    for received in rx {
+        count += received;
+
+        println!("counter: {}", count);
+    }
 }
 
 fn setup_display() -> io::Result<()> {
@@ -53,6 +92,16 @@ fn setup_output(pin_number: u64) -> hal::sysfs_gpio::Result<Pin> {
 
     while !pin.is_exported() {}
     pin.set_direction(Direction::Out)?;
+
+    Ok(pin)
+}
+
+fn setup_input(pin_number: u64) -> hal::sysfs_gpio::Result<Pin> {
+    let pin = Pin::new(pin_number);
+    pin.export()?;
+
+    while !pin.is_exported() {}
+    pin.set_direction(Direction::In)?;
 
     Ok(pin)
 }
