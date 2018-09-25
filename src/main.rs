@@ -8,7 +8,7 @@ use ssd1306::Builder;
 use embedded_hal::prelude::*;
 use hal::spidev::SpidevOptions;
 use hal::{Pin, Spidev};
-use hal::sysfs_gpio::Direction;
+use hal::sysfs_gpio::{Direction, Edge};
 use std::io;
 use std::fmt::Write;
 use std::sync::mpsc;
@@ -53,6 +53,18 @@ fn main() {
             }
 
             thread::sleep_ms(1);
+        }
+    });
+
+    thread::spawn(move || {
+        let btn = setup_input(BTN_PIN).unwrap();
+
+        btn.set_edge(Edge::RisingEdge);
+
+        let mut poller = btn.get_poller().unwrap();
+
+        loop {
+            println!("button {:?}", poller.poll(isize::max_value()).unwrap());
         }
     });
 
