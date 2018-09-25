@@ -3,10 +3,13 @@ extern crate embedded_hal;
 extern crate linux_embedded_hal as hal;
 extern crate homeassistant;
 extern crate dotenv;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 
 use std::sync::mpsc;
 use dotenv::dotenv;
-use std::env;
+use embedded_hal::prelude::*;
 
 use state::ApplicationState;
 use input::*;
@@ -23,8 +26,9 @@ fn main() {
 
     let ha_url = std::env::var("HOME_ASSISTANT_URL").unwrap();
     let ha_token = std::env::var("HOME_ASSISTANT_TOKEN").unwrap();
+    let avr_entity = std::env::var("AVR_ENTITY").unwrap();
 
-    let mut state = ApplicationState::new(ha_url, ha_token);
+    let mut state = ApplicationState::new(ha_url, ha_token, avr_entity);
 
     let mut led = setup_output(LED_PIN).expect("led");
     setup_display().unwrap();

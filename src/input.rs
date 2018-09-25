@@ -1,5 +1,5 @@
-use embedded_hal::prelude::*;
-use hal::{Pin, Spidev};
+use hal;
+use hal::Pin;
 use hal::sysfs_gpio::{Direction, Edge};
 use std::sync::mpsc;
 use std::thread;
@@ -29,7 +29,7 @@ pub fn button_thread(sender: mpsc::Sender<Command>) -> thread::JoinHandle<()> {
 
         loop {
             match poller.poll(isize::max_value()) {
-                Ok(Some(1)) => btn_sender.send(Command::ToggleMute).unwrap(),
+                Ok(Some(1)) => sender.send(Command::ToggleMute).unwrap(),
                 Ok(_) => {},
                 Err(err) => println!("Error {:?}", err)
             }
@@ -50,9 +50,9 @@ pub fn encoder_thread(sender: mpsc::Sender<Command>) -> thread::JoinHandle<()> {
             match poller.poll(isize::max_value()) {
                 Ok(Some(1)) => {
                     if let Ok(0) = dat.get_value() {
-                        encoder_sender.send(Command::IncreaseVolume).unwrap();
+                        sender.send(Command::IncreaseVolume).unwrap();
                     }else {
-                        encoder_sender.send(Command::DecreaseVolume).unwrap();
+                        sender.send(Command::DecreaseVolume).unwrap();
                     }
                 },
                 Ok(_) => {},

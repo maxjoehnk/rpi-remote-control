@@ -1,10 +1,10 @@
 use ssd1306::prelude::*;
 use ssd1306::Builder;
 
-use embedded_hal::prelude::*;
+use hal;
 use hal::spidev::SpidevOptions;
-use hal::{Pin, Spidev};
-use hal::sysfs_gpio::{Direction, Edge};
+use hal::{Pin, Spidev, Delay};
+use hal::sysfs_gpio::Direction;
 use std::io;
 use std::fmt::Write;
 
@@ -18,14 +18,16 @@ pub fn setup_display() -> io::Result<()> {
     spi.configure(&options)?;
 
     // Setup Reset Pin
-    let reset = setup_output(RST_PIN).unwrap();
+    let mut reset = setup_output(RST_PIN).unwrap();
 
     // Setup DC Pin
     let dc = setup_output(DC_PIN).unwrap();
 
+    let mut delay = Delay {};
+
     let mut disp: TerminalMode<_> = Builder::new().connect_spi(spi, dc).into();
+    disp.reset(&mut reset, &mut delay);
     disp.init().unwrap();
-    disp.clear().unwrap();
 
     disp.write_str("Hello World").unwrap();
 

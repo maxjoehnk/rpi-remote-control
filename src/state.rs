@@ -43,7 +43,7 @@ pub struct ApplicationState {
 impl ApplicationState {
     pub fn new<A: Into<String>, B: Into<String>, C: Into<String>>(ha_url: A, ha_token: B, avr_entity_id: C) -> ApplicationState {
         ApplicationState {
-            client: Client::new(ha_url, Some(ha_token)),
+            client: Client::new(ha_url.into(), Some(ha_token.into())),
             avr: AvrState {
                 entity_id: avr_entity_id.into(),
                 ..AvrState::default()
@@ -52,19 +52,19 @@ impl ApplicationState {
     }
 
     pub fn run(&mut self, cmd: Command) {
-        use Command::*;
+        use self::Command::*;
 
-        let avr_entity = std::env::var("AVR_ENTITY").unwrap();
+        let entity_id = self.avr.entity_id.clone();
 
         match cmd {
             IncreaseVolume => {
-                self.client.call_service("media_player", "volume_up", EntityService::new(avr_entity));
+                self.client.call_service("media_player", "volume_up", EntityService::new(entity_id));
             },
             DecreaseVolume => {
-                self.call_service("media_player", "volume_down", EntityService::new(avr_entity));
+                self.client.call_service("media_player", "volume_down", EntityService::new(entity_id));
             },
             ToggleMute => {
-                self.call_service("media_player", "volume_mute", MuteService::new(avr_entity, !self.avr.mute));
+                self.client.call_service("media_player", "volume_mute", MuteService::new(entity_id, !self.avr.mute));
             }
         }
     }
