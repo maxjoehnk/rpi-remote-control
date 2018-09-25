@@ -1,0 +1,7 @@
+# Rust Output
+/target
+**/*.rs.bk
+
+# IntelliJ Projects
+*.iml
+.idea

@@ -1,0 +1,9 @@
+[package]
+name = "rpi-remote-control"
+version = "0.1.0"
+authors = ["Max Jöhnk <maxjoehnk@gmail.com>"]
+
+[dependencies]
+ssd1306 = "0.2.0"
+embedded-hal = "0.2.1"
+linux-embedded-hal = "0.2.0"
