@@ -64,7 +64,8 @@ impl ApplicationState {
                 self.client.call_service("media_player", "volume_down", EntityService::new(entity_id));
             },
             ToggleMute => {
-                self.client.call_service("media_player", "volume_mute", MuteService::new(entity_id, !self.avr.mute));
+                self.avr.mute = !self.avr.mute;
+                self.client.call_service("media_player", "volume_mute", MuteService::new(entity_id, self.avr.mute));
             }
         }
     }

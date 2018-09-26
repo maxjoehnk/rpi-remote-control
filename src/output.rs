@@ -28,6 +28,7 @@ pub fn setup_display() -> io::Result<()> {
     let mut disp: TerminalMode<_> = Builder::new().connect_spi(spi, dc).into();
     disp.reset(&mut reset, &mut delay);
     disp.init().unwrap();
+    disp.clear().unwrap();
 
     disp.write_str("Hello World").unwrap();
 
