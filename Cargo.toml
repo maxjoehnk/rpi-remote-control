@@ -9,8 +9,12 @@ embedded-hal = "0.2.1"
 linux-embedded-hal = "0.2.0"
 serde = "1"
 serde_derive = "1"
+serde_json = "*"
 dotenv = "*"
 
 [dependencies.homeassistant]
 git = "https://github.com/maxjoehnk/homeassistant-rs"
 branch = "feature/bearer-access-token"
+
+[patch."https://github.com/maxjoehnk/homeassistant-rs".homeassistant]
+path = "../homeassistant-rs"

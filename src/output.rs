@@ -1,17 +1,31 @@
-use ssd1306::prelude::*;
-use ssd1306::Builder;
+use std::fmt::Write;
 
 use hal;
+use hal::{Delay, Pin, Spidev};
 use hal::spidev::SpidevOptions;
-use hal::{Pin, Spidev, Delay};
 use hal::sysfs_gpio::Direction;
-use std::io;
-use std::fmt::Write;
+use ssd1306::Builder;
+use ssd1306::prelude::*;
+use error::Result;
+use state::ApplicationState;
 
 const RST_PIN: u64 = 23;
 const DC_PIN: u64 = 24;
 
-pub fn setup_display() -> io::Result<()> {
+pub struct Display {
+    display: TerminalMode<SpiInterface<Spidev, Pin>>
+}
+
+impl Display {
+    pub fn render(&mut self, state: &ApplicationState) -> Result<()> {
+        self.display.clear()?;
+        write!(self.display, "Volume: {}", state.avr.volume)?;
+        Ok(())
+    }
+}
+
+pub fn setup_display() -> Result<Display> {
+    println!("setting up display...");
     let mut spi = Spidev::open("/dev/spidev0.0")?;
     let options = SpidevOptions::new().max_speed_hz(50_000).build();
 
@@ -25,14 +39,16 @@ pub fn setup_display() -> io::Result<()> {
 
     let mut delay = Delay {};
 
-    let mut disp: TerminalMode<_> = Builder::new().connect_spi(spi, dc).into();
-    disp.reset(&mut reset, &mut delay);
-    disp.init().unwrap();
-    disp.clear().unwrap();
+    let mut display: TerminalMode<_> = Builder::new().with_size(DisplaySize::Display128x32).connect_spi(spi, dc).into();
+    display.reset(&mut reset, &mut delay);
+    display.init()?;
+    display.clear()?;
 
-    disp.write_str("Hello World").unwrap();
+    println!("done");
 
-    Ok(())
+    Ok(Display {
+        display
+    })
 }
 
 pub fn setup_output(pin_number: u64) -> hal::sysfs_gpio::Result<Pin> {

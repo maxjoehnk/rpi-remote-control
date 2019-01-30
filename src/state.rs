@@ -1,10 +1,11 @@
 use homeassistant::Client;
+use error;
 
 #[derive(Debug, Default)]
 pub struct AvrState {
     entity_id: String,
     pub mute: bool,
-    pub volume: i32
+    pub volume: f64
 }
 
 #[derive(Serialize)]
@@ -51,28 +52,61 @@ impl ApplicationState {
         }
     }
 
-    pub fn run(&mut self, cmd: Command) {
+    pub fn run(&mut self, cmd: Command) -> error::Result<()> {
         use self::Command::*;
 
         let entity_id = self.avr.entity_id.clone();
 
         match cmd {
             IncreaseVolume => {
-                self.client.call_service("media_player", "volume_up", EntityService::new(entity_id));
+                let state = self.client.call_service("media_player", "volume_up", EntityService::new(entity_id))?;
+
+                match state.get(0) {
+                    Some(state) => self.update_avr_state(state),
+                    _ => {}
+                }
             },
             DecreaseVolume => {
-                self.client.call_service("media_player", "volume_down", EntityService::new(entity_id));
+                let state = self.client.call_service("media_player", "volume_down", EntityService::new(entity_id))?;
+
+                match state.get(0) {
+                    Some(state) => self.update_avr_state(state),
+                    _ => {}
+                }
             },
             ToggleMute => {
-                self.avr.mute = !self.avr.mute;
-                self.client.call_service("media_player", "volume_mute", MuteService::new(entity_id, self.avr.mute));
+                let state = self.client.call_service("media_player", "volume_mute", MuteService::new(entity_id, self.avr.mute))?;
+
+                match state.get(0) {
+                    Some(state) => self.update_avr_state(state),
+                    _ => {}
+                }
+            },
+            Refresh => {
+                let state = self.client.get_state(&entity_id)?;
+                self.update_avr_state(&state);
             }
+        }
+
+        Ok(())
+    }
+
+    fn update_avr_state(&mut self, state: &homeassistant::structs::State) {
+        let volume = state.attributes.get("volume_level").and_then(|value| value.as_f64());
+        let muted = state.attributes.get("is_volume_muted").and_then(|value| value.as_bool());
+
+        if let Some(volume) = volume {
+            self.avr.volume = volume;
+        }
+        if let Some(muted) = muted {
+            self.avr.mute = muted;
         }
     }
 }
 
 #[derive(Debug)]
 pub enum Command {
+    Refresh,
     IncreaseVolume,
     DecreaseVolume,
     ToggleMute
